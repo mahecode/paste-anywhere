@@ -9,12 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@upstash/redis": "^1.36.2",
+    "nanoid": "^5.1.6",
     "next": "16.1.6",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/qrcode.react": "^1.0.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
