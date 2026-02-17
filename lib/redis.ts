@@ -1,19 +1,19 @@
 import { Redis } from '@upstash/redis';
 
-// Initialize Redis client
-const url = process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Lazy initialization function to ensure env vars are available at runtime
+const getRedisClient = () => {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-console.log('Redis Init - URL exists:', !!url, 'Token exists:', !!token);
+  if (!url || !token) {
+    throw new Error('Redis URL and Token are required');
+  }
 
-if (!url || !token) {
-  throw new Error('Redis URL and Token are required');
-}
-
-const redis = new Redis({
-  url,
-  token,
-});
+  return new Redis({
+    url,
+    token,
+  });
+};
 
 export interface StoredContent {
   type: 'text' | 'image';
@@ -33,6 +33,7 @@ export async function storeContent(
   data: StoredContent,
   ttlSeconds: number = 300
 ): Promise<void> {
+  const redis = getRedisClient();
   await redis.set(id, JSON.stringify(data), { ex: ttlSeconds });
 }
 
@@ -42,6 +43,7 @@ export async function storeContent(
  * @returns Content data or null if not found
  */
 export async function getContent(id: string): Promise<StoredContent | null> {
+  const redis = getRedisClient();
   const data = await redis.get<StoredContent | string>(id);
 
   if (!data) {
@@ -63,6 +65,7 @@ export async function getContent(id: string): Promise<StoredContent | null> {
  * @param id Unique identifier for the content
  */
 export async function deleteContent(id: string): Promise<void> {
+  const redis = getRedisClient();
   await redis.del(id);
 }
 
@@ -72,8 +75,10 @@ export async function deleteContent(id: string): Promise<void> {
  * @returns boolean indicating if content exists
  */
 export async function contentExists(id: string): Promise<boolean> {
+  const redis = getRedisClient();
   const exists = await redis.exists(id);
   return exists === 1;
 }
 
-export default redis;
+// Export a getter for direct access if needed
+export const redisClient = getRedisClient;
