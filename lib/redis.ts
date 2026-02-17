@@ -1,9 +1,18 @@
 import { Redis } from '@upstash/redis';
 
 // Initialize Redis client
+const url = process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+console.log('Redis Init - URL exists:', !!url, 'Token exists:', !!token);
+
+if (!url || !token) {
+  throw new Error('Redis URL and Token are required');
+}
+
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url,
+  token,
 });
 
 export interface StoredContent {
