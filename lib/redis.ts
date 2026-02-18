@@ -2,8 +2,8 @@ import { Redis } from '@upstash/redis';
 
 // Lazy initialization function to ensure env vars are available at runtime
 const getRedisClient = () => {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
   if (!url || !token) {
     throw new Error('Redis URL and Token are required');

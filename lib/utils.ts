@@ -11,6 +11,12 @@ export function generateId(): string {
  * Build the full shareable URL for a given ID
  */
 export function buildShareUrl(id: string): string {
+    // In the browser, use the current origin
+    if (typeof window !== 'undefined') {
+        return `${window.location.origin}/${id}`;
+    }
+
+    // Fallback for SSR or if window is not available
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     return `${baseUrl}/${id}`;
 }
