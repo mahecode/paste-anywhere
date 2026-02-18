@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import QRDisplay from '@/components/QRDisplay';
 import styles from './page.module.css';
+import { DIRECT_QR_THRESHOLD, getByteSize } from '@/lib/utils';
 
 export default function Home() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [directContent, setDirectContent] = useState('');
   const [error, setError] = useState('');
 
   const handleShare = async () => {
@@ -16,10 +18,19 @@ export default function Home() {
       return;
     }
 
+    const trimmed = content.trim();
     setLoading(true);
     setError('');
 
     try {
+      // Short content: encode directly in the QR — no server call needed
+      if (getByteSize(trimmed) <= DIRECT_QR_THRESHOLD) {
+        setDirectContent(trimmed);
+        setLoading(false);
+        return;
+      }
+
+      // Long content: store in Redis and encode the share URL
       const response = await fetch('/api/share', {
         method: 'POST',
         headers: {
@@ -27,7 +38,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           type: 'text',
-          content: content.trim(),
+          content: trimmed,
         }),
       });
 
@@ -47,79 +58,90 @@ export default function Home() {
 
   const handleCloseQR = () => {
     setShareUrl('');
+    setDirectContent('');
     setContent('');
   };
 
   return (
     <div className={styles.container}>
-      <main className={styles.main}>
-        <div className={styles.hero}>
+      <main className={`${styles.main} animate-entrance`}>
+        <header className={styles.hero}>
           <h1 className={styles.title}>
-            Paste<span className={styles.gradient}>Anywhere</span>
+            Paste<span className={styles.accent}>Anywhere</span>
           </h1>
           <p className={styles.subtitle}>
-            Copy on one device, paste on any other. Instantly.
+            Instantly sync text content across all your devices using QR codes. No accounts, no hassle.
           </p>
-        </div>
+        </header>
 
-        <div className={`${styles.card} glass`}>
+        <section className={`${styles.card} glass animate-float`}>
           <div className={styles.inputSection}>
             <label htmlFor="content" className={styles.label}>
-              📋 Your Content
+              <span>📝</span> Your content
             </label>
             <textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Paste your text here..."
+              placeholder="Type or paste anything here..."
               className={styles.textarea}
               disabled={loading}
             />
           </div>
 
-          {error && (
-            <div className={styles.error}>
-              ⚠️ {error}
-            </div>
-          )}
-
-          <button
-            className="btn btn-primary"
-            onClick={handleShare}
-            disabled={loading || !content.trim()}
-          >
-            {loading ? (
-              <span className={styles.loadingText}>
-                <span className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></span>
-                Generating QR...
-              </span>
-            ) : (
-              '🚀 Generate QR Code'
+          <div className={styles.actionSection}>
+            {error && (
+              <div className={styles.error}>
+                <span>⚠️</span> {error}
+              </div>
             )}
-          </button>
+
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+              onClick={handleShare}
+              disabled={loading || !content.trim()}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner"></span>
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <span>✨</span>
+                  <span>Generate QR Access</span>
+                </>
+              )}
+            </button>
+          </div>
 
           <div className={styles.features}>
-            <div className={styles.feature}>
-              <span className={styles.featureIcon}>⚡</span>
-              <span>Instant sharing</span>
+            <div className={styles.badge}>
+              <span>⚡</span> <span>Fast</span>
             </div>
-            <div className={styles.feature}>
-              <span className={styles.featureIcon}>🔒</span>
-              <span>Auto-expires</span>
+            <div className={styles.badge}>
+              <span>🔒</span> <span>Secure</span>
             </div>
-            <div className={styles.feature}>
-              <span className={styles.featureIcon}>📱</span>
-              <span>Any device</span>
+            <div className={styles.badge}>
+              <span>📱</span> <span>Cross-device</span>
             </div>
           </div>
-        </div>
+        </section>
 
         <footer className={styles.footer}>
-          <p>No accounts. No tracking. Just paste.</p>
+          <p>Privacy focused. Multi-device sync.</p>
         </footer>
       </main>
 
-      {shareUrl && <QRDisplay url={shareUrl} onClose={handleCloseQR} />}
+      {(shareUrl || directContent) && (
+        <QRDisplay
+          url={shareUrl || undefined}
+          content={directContent || undefined}
+          onClose={handleCloseQR}
+        />
+      )}
     </div>
   );
 }
+

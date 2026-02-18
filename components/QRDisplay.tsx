@@ -5,16 +5,21 @@ import { useState } from 'react';
 import styles from './QRDisplay.module.css';
 
 interface QRDisplayProps {
-    url: string;
+    url?: string;
+    content?: string;
     onClose: () => void;
 }
 
-export default function QRDisplay({ url, onClose }: QRDisplayProps) {
+export default function QRDisplay({ url, content, onClose }: QRDisplayProps) {
     const [copied, setCopied] = useState(false);
+
+    // Direct-content mode when `content` is provided; URL mode otherwise
+    const isDirect = Boolean(content);
+    const qrValue = content ?? url ?? '';
 
     const handleCopyUrl = async () => {
         try {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(url ?? '');
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {
@@ -29,41 +34,54 @@ export default function QRDisplay({ url, onClose }: QRDisplayProps) {
                     ✕
                 </button>
 
-                <h2 className={styles.title}>Scan to Access</h2>
+                <h2 className={styles.title}>
+                    {isDirect ? 'Scan to paste' : 'Ready to sync'}
+                </h2>
                 <p className={styles.subtitle}>
-                    Scan this QR code from any device to access your content
+                    {isDirect
+                        ? 'Content is embedded directly in this QR — no server, no expiry.'
+                        : 'Scan this QR code from any device to access your shared content instantly.'}
                 </p>
 
                 <div className={styles.qrContainer}>
                     <QRCodeSVG
-                        value={url}
-                        size={280}
-                        level="H"
-                        includeMargin={true}
+                        value={qrValue}
+                        size={240}
+                        level={isDirect ? 'M' : 'H'}
+                        includeMargin={false}
                         bgColor="#ffffff"
                         fgColor="#000000"
                     />
                 </div>
 
-                <div className={styles.urlContainer}>
-                    <input
-                        type="text"
-                        value={url}
-                        readOnly
-                        className={styles.urlInput}
-                    />
-                    <button
-                        className={`btn btn-secondary ${styles.copyBtn}`}
-                        onClick={handleCopyUrl}
-                    >
-                        {copied ? '✓ Copied!' : 'Copy URL'}
-                    </button>
-                </div>
+                {isDirect ? (
+                    <p className={styles.expiry}>
+                        <span>⚡</span> Serverless &amp; permanent — works offline
+                    </p>
+                ) : (
+                    <>
+                        <div className={styles.urlContainer}>
+                            <input
+                                type="text"
+                                value={url}
+                                readOnly
+                                className={styles.urlInput}
+                            />
+                            <button
+                                className={`btn btn-secondary ${styles.copyBtn}`}
+                                onClick={handleCopyUrl}
+                            >
+                                {copied ? '✓ Copied' : 'Copy link'}
+                            </button>
+                        </div>
 
-                <p className={styles.expiry}>
-                    ⏱️ Expires in 5 minutes or after first access
-                </p>
+                        <p className={styles.expiry}>
+                            <span>⏱️</span> Expires in 5 minutes or after first access
+                        </p>
+                    </>
+                )}
             </div>
         </div>
     );
 }
+

@@ -1,6 +1,20 @@
 import { nanoid } from 'nanoid';
 
 /**
+ * Threshold (in bytes) below which content is encoded directly in the QR.
+ * Above this threshold the content is stored in Redis and a URL is encoded instead.
+ * QR codes at level "M" support ~2331 bytes; 1500 is a safe, scannable limit.
+ */
+export const DIRECT_QR_THRESHOLD = 1500;
+
+/**
+ * Return the UTF-8 byte size of a string
+ */
+export function getByteSize(str: string): number {
+    return new Blob([str]).size;
+}
+
+/**
  * Generate a unique 8-character ID
  */
 export function generateId(): string {
